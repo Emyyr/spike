@@ -32,6 +32,7 @@
         https://github.com/spiffe/spike/pull/263
         https://github.com/spiffe/spike/pull/268
         https://github.com/spiffe/spike/pull/270
+        https://github.com/spiffe/helm-charts-hardened/pull/665
       </issue>
     </watch-list>
   </high-level-plan>
@@ -157,7 +158,7 @@
       "secret with path %s not found for version %v",
       path, version,
       )
-      return nil, &failErr
+      return nil, &amp;failErr
       }
     </issue>
     <issue>
@@ -173,7 +174,7 @@
       defer s.mu.Unlock()
 
       tx, beginErr := s.db.BeginTx(
-      ctx, &sql.TxOptions{Isolation: sql.LevelSerializable},
+      ctx, &amp;sql.TxOptions{Isolation: sql.LevelSerializable},
       )
       if beginErr != nil {
       failErr := sdkErrors.ErrTransactionBeginFailed.Wrap(beginErr)
@@ -743,6 +744,35 @@
     <issue waitingFor="upstreamHelmCharts">
       after helm-charts changes are merged, verify that the quickstart
       guide still works.
+    </issue>
+    <issue>
+      audit: right now we send audit logs to std err.
+      we would need different audit targets later.
+    </issue>
+    <issue>
+      this function is a temporary fix.
+      conxtext-based handling is already in the SDK
+      update it
+      func contributeWithContext(
+      ctx context.Context, api *spike.API,
+      share secretsharing.Share, keeperID string,
+      ) error {
+    </issue>
+    <issue>
+      // Serve the app.
+      sdkNet.ServeWithRoute(
+      appName,
+      source,
+      http.Route,
+      // AllowAll, because any workload can talk to SPIKE Nexus if they
+      // have a legitimate SPIFFE ID registration entry.
+      // we might want to further restrict this based on environment
+      // configuration maybe (for example, a predicate that checks regex
+      // matching on workload SPIFFFE IDs before granting access,
+      // if the matcher is not provided, AllowAll will be assumed.
+      predicate.AllowAll,
+      env.NexusTLSPortVal(),
+      )
     </issue>
     <issue>
       CLI debug logging to file.

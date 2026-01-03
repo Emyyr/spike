@@ -17,12 +17,11 @@ import (
 	"github.com/spiffe/spike-sdk-go/crypto"
 	sdkErrors "github.com/spiffe/spike-sdk-go/errors"
 	"github.com/spiffe/spike-sdk-go/log"
-	network "github.com/spiffe/spike-sdk-go/net"
+	"github.com/spiffe/spike-sdk-go/net"
 	"github.com/spiffe/spike-sdk-go/predicate"
 	"github.com/spiffe/spike-sdk-go/security/mem"
 
 	state "github.com/spiffe/spike/app/nexus/internal/state/base"
-	"github.com/spiffe/spike/internal/net"
 )
 
 // sendShardsToKeepers distributes shares of the root key to all keeper nodes.
@@ -66,7 +65,14 @@ func sendShardsToKeepers(
 			continue
 		}
 
-		rootSecret, rootShares := computeShares()
+		state.LockRootKey()
+		rootSecret, rootShares := crypto.ComputeShares(state.RootKeyNoLock())
+		// not using `defer` because ComputeShare is deterministic, it does not
+		// return an error, and `root key` is not nil. -- using defer in a loop
+		// can potentially leak resources. An alternative approach could be to
+		// use a closure or create a copy of the root key; both of the approaches
+		// complicate the code further.
+		state.UnlockRootKey()
 
 		var share secretsharing.Share
 		for _, sr := range rootShares {
@@ -152,7 +158,7 @@ func sendShardsToKeepers(
 		// Security: Only SPIKE Keeper can send shards to SPIKE Nexus.
 		// Create the client just before use to avoid unnecessary allocation
 		// if earlier checks fail.
-		client := network.CreateMTLSClientWithPredicate(
+		client := net.CreateMTLSClientWithPredicate(
 			source, predicate.AllowKeeper,
 		)
 
